@@ -1,6 +1,0 @@
-{
-	"mongoURI": "mongodb+srv://ajaysh73:ajaysh7312@devconnector.derew.mongodb.net/test?retryWrites=true&w=majority",
-	"jwtSecret": "mySecret",
-	"githubClientID": "da8a10718307c41e13fd",
-	"githubSecret": "db7ad36b3a7e3e44264c5f4570275e303dacf2bf"
-}
