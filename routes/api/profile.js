@@ -5,6 +5,7 @@ const auth = require('../../middleware/auth');
 const { check, validationResult } = require('express-validator');
 const Profile = require('../../models/Profile');
 const User = require('../../models/User');
+const Post = require('../../models/Post');
 const config = require('config');
 const normalize = require('normalize-url');
 const { route } = require('./users');
@@ -62,18 +63,21 @@ router.post(
 			facebook,
 		} = req.body;
 
-		//Build a profile object
-		const profileFields = {};
-		profileFields.user = req.user.id;
-		if (company) profileFields.company = company;
-		if (location) profileFields.location = location;
-		if (website) profileFields.website = website;
-		if (bio) profileFields.bio = bio;
-		if (status) profileFields.status = status;
-		if (githubusername) profileFields.githubusername = githubusername;
-		if (skills) {
-			profileFields.skills = skills.split(',').map((skill) => skill.trim());
-		}
+		const profileFields = {
+			user: req.user.id,
+			company,
+			location,
+			website:
+				website && website !== ''
+					? normalize(website, { forceHttps: true })
+					: '',
+			bio,
+			skills: Array.isArray(skills)
+				? skills
+				: skills.split(',').map((skill) => ' ' + skill.trim()),
+			status,
+			githubusername,
+		};
 
 		//Build social object
 		profileFields.social = {};
@@ -144,7 +148,9 @@ router.get('/user/:user_id', async (req, res) => {
 // @access  Private
 router.delete('/', auth, async (req, res) => {
 	try {
-		// Todo: remove post
+		// Remove users post
+		await Post.deleteMany({ user: req.user.id });
+		
 		//Remove profile
 		await Profile.findOneAndRemove({ user: req.user.id });
 
@@ -322,7 +328,7 @@ router.get('/github/:username', (req, res) => {
 				'githubClientID'
 			)}&client_secret=${config.get('githubSecret')}`,
 			method: 'GET',
-			headers: { 'user-agent': 'node.js'}
+			headers: { 'user-agent': 'node.js' },
 		};
 		request(options, (error, response, body) => {
 			if (error) console.error(error.message);
@@ -331,7 +337,6 @@ router.get('/github/:username', (req, res) => {
 			}
 			res.json(JSON.parse(body));
 		});
-		
 	} catch (err) {
 		console.error(err);
 		res.send(500).send('Server Error');
